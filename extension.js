@@ -14,6 +14,7 @@ const {
   trackQuickExits,
   quickExitHint
 } = require("./lib/probe");
+const { stopProcessTree, watchSpawnOptions } = require("./lib/process-tree");
 
 const BACKGROUND = {
   warn: "statusBarItem.warningBackground",
@@ -66,14 +67,10 @@ class Probe {
     let buffer = "";
     let rendered = false;
     let stderrTail = "";
-    const child = spawn(resolveVariables(this.item.command, variables), {
-      shell: true,
-      cwd: resolveVariables(this.item.cwd, variables),
-      // Its own process group, so stopping it also stops what the shell started.
-      detached: process.platform !== "win32",
-      windowsHide: true,
-      stdio: ["ignore", "pipe", "pipe"]
-    });
+    const child = spawn(
+      resolveVariables(this.item.command, variables),
+      watchSpawnOptions(resolveVariables(this.item.cwd, variables))
+    );
     this.child = child;
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", chunk => {
@@ -119,12 +116,7 @@ class Probe {
     this.child = null;
     if (!child || child.exitCode !== null) return;
     child.stoppedByProbe = true;
-    try {
-      if (process.platform !== "win32") process.kill(-child.pid, "SIGTERM");
-      else child.kill();
-    } catch {
-      child.kill();
-    }
+    stopProcessTree(child);
   }
 
   refresh() {

@@ -7,6 +7,10 @@
   change.
 - README: a "Choosing a mode" section on which combinations fit which
   sources.
+- Windows: stopping a watch command now stops everything it started
+  (`taskkill /T /F`). Before, only the shell was killed, which left the
+  real program, such as a `node` listener, running after every refresh or
+  window reload.
 - A watch command that exits within 5 s three times in a row gets a hint in
   the output channel: it looks like an ordinary command meant for interval
   mode.

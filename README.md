@@ -159,6 +159,8 @@ code --install-extension dist/status-probe-*.vsix
 
 ## Develop
 
-Plain JavaScript, no build step. `lib/probe.js` holds the logic that doesn't
-need VS Code and has its own tests (`npm test`). To try changes, open this
+Plain JavaScript, no build step. `lib/` holds the logic that doesn't need
+VS Code, with its own tests (`npm test`), including one that starts a real
+process tree and checks that stopping a watch command stops all of it. CI runs
+the tests on Linux, macOS and Windows. To try changes, open this
 folder in VS Code and press F5 to launch an Extension Development Host.
