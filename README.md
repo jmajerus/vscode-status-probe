@@ -33,6 +33,11 @@ Server-Sent Events stream, a websocket, a file watcher, `tail -f`) and prints
 one line per event. Status Probe listens on the command's stdout, and each
 line becomes the item's new status.
 
+`watch` describes the command, so it's off by default: an ordinary command
+that exits after printing would only be restarted over and over. If a watch
+command exits within 5 seconds three times in a row, Status Probe writes a
+hint to its output channel saying so.
+
 If the command exits, the item keeps its last status, and the command is
 started again after 2 s, then 4 s, doubling up to 60 s. The delay starts over
 after a run that lasted a minute. Exiting is also a reasonable way to reload
@@ -85,10 +90,13 @@ asking what can tell you about a change.
 | `watch` + `refreshOnTasks` | Events, and a listener restart when a linked task ends | A slow task you'd like to see in progress: the spinner shows an update is coming. The restart is a fallback for a source that can miss a change. |
 | `refreshOnTasks` with `"intervalSeconds": 0` | Linked tasks ending, plus startup and clicks | Only your own tasks change the status. The result of the last local build or migration. |
 
-Rule of thumb: use `watch` when the source can tell you about changes, add
-`refreshOnTasks` when your own tasks cause changes, and keep an interval
-only as a backstop for changes nothing reports. `watch` turns the timer off
-by itself, since a command that never exits has nothing to re-run.
+Rule of thumb: if your source can report changes, write the command as a
+listener (one that stays running and prints a line per event) and set
+`watch: true`. That's the best fit when it's possible. Otherwise the default,
+interval mode, re-runs an ordinary command that prints and exits. Add
+`refreshOnTasks` when your own tasks cause changes, and keep a timer only as
+a backstop for changes nothing reports. `watch` turns the timer off by
+itself, since a command that never exits has nothing to re-run.
 
 ## The output contract
 

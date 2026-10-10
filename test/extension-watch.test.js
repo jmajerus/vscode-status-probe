@@ -27,7 +27,7 @@ const fakeVscode = {
       bars.push(bar);
       return bar;
     },
-    createOutputChannel() { return { appendLine() {}, dispose() {} }; }
+    createOutputChannel() { return { appendLine() {}, show() {}, dispose() {} }; }
   },
   workspace: {
     isTrusted: true,

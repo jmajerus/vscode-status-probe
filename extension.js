@@ -10,7 +10,9 @@ const {
   interpretRun,
   takeLines,
   nextRestartDelay,
-  taskMatches
+  taskMatches,
+  trackQuickExits,
+  quickExitHint
 } = require("./lib/probe");
 
 const BACKGROUND = {
@@ -99,7 +101,14 @@ class Probe {
       if (!rendered) {
         this.render(interpretRun({ id: this.item.id, exitCode: code ?? 1, stdout: buffer, stderr: stderrTail }));
       }
-      this.restartDelay = nextRestartDelay(this.restartDelay, Date.now() - startedAt);
+      const ranMs = Date.now() - startedAt;
+      const exits = trackQuickExits(this.quickExits || 0, ranMs);
+      this.quickExits = exits.count;
+      if (exits.hint) {
+        this.output.appendLine(quickExitHint(this.item.id));
+        this.output.show(true);
+      }
+      this.restartDelay = nextRestartDelay(this.restartDelay, ranMs);
       this.restartTimer = setTimeout(() => this.startWatch(), this.restartDelay);
     });
   }

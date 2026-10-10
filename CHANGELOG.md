@@ -7,6 +7,9 @@
   change.
 - README: a "Choosing a mode" section on which combinations fit which
   sources.
+- A watch command that exits within 5 s three times in a row gets a hint in
+  the output channel: it looks like an ordinary command meant for interval
+  mode.
 
 ## 0.3.0
 

@@ -9,7 +9,9 @@ const {
   interpretRun,
   takeLines,
   nextRestartDelay,
-  taskMatches
+  taskMatches,
+  trackQuickExits,
+  quickExitHint
 } = require("../lib/probe");
 
 test("normalizeItem fills defaults and rejects incomplete items", () => {
@@ -100,4 +102,17 @@ test("taskMatches takes exact labels and trailing-* prefixes", () => {
   assert.equal(taskMatches(patterns, undefined), false);
   assert.deepEqual(normalizeItem({ id: "a", command: "x", refreshOnTasks: ["  T  ", "", 3] }, 0).item.refreshOnTasks, ["T"]);
   assert.equal(normalizeItem({ id: "a", command: "x", showTaskProgress: false }, 0).item.showTaskProgress, false);
+});
+
+test("trackQuickExits hints once after three quick exits in a row", () => {
+  let count = 0;
+  const hints = [];
+  for (const ranMs of [200, 300, 100, 150, 400]) {
+    const result = trackQuickExits(count, ranMs);
+    count = result.count;
+    hints.push(result.hint);
+  }
+  assert.deepEqual(hints, [false, false, true, false, false]);
+  assert.equal(trackQuickExits(2, 60000).count, 0, "a long run resets the streak");
+  assert.match(quickExitHint("x"), /"x" has watch: true[\s\S]*remove watch to use interval mode/);
 });
