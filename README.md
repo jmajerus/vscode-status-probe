@@ -1,8 +1,8 @@
 # Status Probe
 
 Status bar items driven by your own commands. An item either re-runs its
-command on an interval, or (`watch`) starts it once and waits for it to
-report changes. The command prints JSON lines, and Status Probe renders each
+command on an interval, or (`watch`) runs it as an event listener that
+reports each change as it happens. The command prints JSON lines, and Status Probe renders each
 one: text, a markdown tooltip, a warning or error background, and a link to
 open on click.
 
@@ -27,12 +27,11 @@ queue, a quota: all of that logic lives in your script, in your project.
 By default an item runs its command every `intervalSeconds` and reads the
 **last non-empty line of stdout** when it exits.
 
-With `"watch": true`, Status Probe starts the command **once** and leaves it
-running. Nothing happens until the command prints a line. Whenever it does,
-seconds or hours later, that line becomes the item's new status. The command
-is meant to sit idle, waiting on something that tells it about changes (a
-Server-Sent Events stream, a websocket, `tail -f`, a file watcher), and print
-only when one arrives. Status Probe never re-runs or polls a watch command.
+With `"watch": true`, the command is an **event listener**. Status Probe
+starts it once. The command listens for events from whatever it watches (a
+Server-Sent Events stream, a websocket, a file watcher, `tail -f`) and prints
+one line per event. Status Probe listens on the command's stdout, and each
+line becomes the item's new status.
 
 If the command exits, the item keeps its last status, and the command is
 started again after 2 s, then 4 s, doubling up to 60 s. The delay starts over
@@ -77,7 +76,7 @@ went wrong instead of a generic error.
 |---|---|---|
 | `id` | required | Unique name for the item. |
 | `command` | required | Shell command. `${workspaceFolder}` and `${userHome}` are substituted. |
-| `watch` | `false` | Start the command once and wait; each line it prints, whenever it prints one, becomes the item's status. |
+| `watch` | `false` | Run the command as an event listener: started once, it prints a line per event, and each line becomes the item's status. |
 | `cwd` | `${workspaceFolder}` | Working directory. In a multi-root window, `${workspaceFolder}` is the first folder. |
 | `intervalSeconds` | `300` | Seconds between runs, minimum 10. Not used with `watch`. |
 | `timeoutSeconds` | `60` | Seconds before the run is stopped and shown as an error. Not used with `watch`. |

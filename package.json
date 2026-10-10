@@ -1,7 +1,7 @@
 {
   "name": "status-probe",
   "displayName": "Status Probe",
-  "description": "Status bar items driven by your own commands: each prints JSON lines (text, tooltip, ok/warn/error, a link), re-run on an interval or started once to report changes as they happen.",
+  "description": "Status bar items driven by your own commands: each prints JSON lines (text, tooltip, ok/warn/error, a link), re-run on an interval or run as an event listener.",
   "version": "0.2.0",
   "publisher": "jmajerus",
   "license": "MIT",
@@ -47,7 +47,7 @@
         "statusProbe.items": {
           "type": "array",
           "default": [],
-          "markdownDescription": "Status bar items. Each item re-runs `command` every `intervalSeconds`, or with `watch` starts it once and updates whenever it prints a line. A line may be JSON `{ \"text\", \"tooltip\", \"level\", \"open\" }`; anything else shows as plain text.",
+          "markdownDescription": "Status bar items. Each item re-runs `command` every `intervalSeconds`, or with `watch` runs it as an event listener that prints a line per event. A line may be JSON `{ \"text\", \"tooltip\", \"level\", \"open\" }`; anything else shows as plain text.",
           "items": {
             "type": "object",
             "required": [
@@ -66,7 +66,7 @@
               "watch": {
                 "type": "boolean",
                 "default": false,
-                "markdownDescription": "Start the command once and wait for it to print, instead of re-running it every `intervalSeconds`. Each line it prints, whenever it prints one, becomes the item's status. If it exits, it is started again with backoff."
+                "markdownDescription": "Run the command as an event listener instead of re-running it every `intervalSeconds`: started once, it prints a line per event, and each line becomes the item's status. If it exits, it is started again with backoff."
               },
               "cwd": {
                 "type": "string",

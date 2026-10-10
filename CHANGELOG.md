@@ -2,9 +2,8 @@
 
 ## 0.2.0
 
-- `watch: true` starts an item's command once and updates the item whenever
-  the command prints a line, so a command can push changes instead of being
-  re-run. A command
+- `watch: true` runs an item's command as an event listener: started once,
+  it prints a line per event, and each line updates the item. A command
   that exits is restarted with backoff (2 s doubling to 60 s), and the item
   keeps its last status meanwhile.
 
