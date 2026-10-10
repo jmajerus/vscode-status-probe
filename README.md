@@ -1,9 +1,10 @@
 # Status Probe
 
-Status bar items driven by your own commands. Each item runs a command on an
-interval. The command prints one line of JSON, and Status Probe renders it:
-text, a markdown tooltip, a warning or error background, and a link to open
-on click.
+Status bar items driven by your own commands. Each item runs a command
+either on an interval or continuously (`watch`), pushing a line whenever
+something changes. Each line is JSON, and Status Probe renders it: text, a
+markdown tooltip, a warning or error background, and a link to open on
+click.
 
 The extension knows nothing about what you're checking. A deploy, a server, a
 queue, a quota: all of that logic lives in your script, in your project.
@@ -21,10 +22,31 @@ queue, a quota: all of that logic lives in your script, in your project.
 }
 ```
 
+## Interval or watch
+
+By default an item runs its command every `intervalSeconds` and reads the
+**last non-empty line of stdout** when it exits.
+
+With `"watch": true` the command keeps running, and **every line it prints**
+replaces what the item shows. A script can hold a connection open (Server-Sent
+Events, a websocket, `tail -f`, a file watcher) and print only when something
+changes, so nothing polls. If the command exits, the item keeps its last
+status and the command is restarted after 2 s, doubling up to 60 s. The delay
+starts over after a run that lasted a minute. Exiting is also a reasonable way
+to reload configuration, such as an edited `.env`.
+
+```jsonc
+{
+  "statusProbe.items": [
+    { "id": "deploys", "command": "node tools/deploy-status.mjs --watch", "watch": true }
+  ]
+}
+```
+
 ## The output contract
 
-Status Probe reads the **last non-empty line of stdout**. If that line is a
-JSON object with a `text` field, it's used like this:
+Each line Status Probe reads is used like this when it's a JSON object with a
+`text` field:
 
 | Field | Meaning |
 |---|---|
@@ -37,8 +59,8 @@ JSON object with a `text` field, it's used like this:
 {"text":"$(server) main ↓3","tooltip":"**Staging** is 3 commits behind main","level":"warn","open":"https://staging.example/admin"}
 ```
 
-Any other output is shown as plain text: the first stdout line, with no
-background when the command exits 0. A non-zero exit, a timeout or a missing
+Any other line is shown as plain text, with no background. In interval
+mode that's the first stdout line, and only when the command exits 0. A non-zero exit, a timeout or a missing
 command shows `$(error) <id>` on the error background, with stderr in the
 tooltip. stderr also goes to the **Status Probe** output channel.
 
@@ -51,13 +73,16 @@ went wrong instead of a generic error.
 |---|---|---|
 | `id` | required | Unique name for the item. |
 | `command` | required | Shell command. `${workspaceFolder}` and `${userHome}` are substituted. |
+| `watch` | `false` | Keep the command running; every line it prints updates the item. |
 | `cwd` | `${workspaceFolder}` | Working directory. In a multi-root window, `${workspaceFolder}` is the first folder. |
-| `intervalSeconds` | `300` | Seconds between runs, minimum 10. |
-| `timeoutSeconds` | `60` | Seconds before the run is stopped and shown as an error. |
+| `intervalSeconds` | `300` | Seconds between runs, minimum 10. Not used with `watch`. |
+| `timeoutSeconds` | `60` | Seconds before the run is stopped and shown as an error. Not used with `watch`. |
 | `alignment` | `left` | `left` or `right`. |
 | `priority` | `0` | Higher sits farther toward the outer edge of its side. |
 
-**Status Probe: Refresh All** re-runs every item now.
+**Status Probe: Refresh All** re-runs every item now, and restarts `watch`
+commands. Clicking an item without an `open` link does the same for that
+item.
 
 ## Trust
 

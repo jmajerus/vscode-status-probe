@@ -3,13 +3,14 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { normalizeItem, resolveVariables, interpretRun } = require("../lib/probe");
+const { normalizeItem, resolveVariables, interpretRun, takeLines, nextRestartDelay } = require("../lib/probe");
 
 test("normalizeItem fills defaults and rejects incomplete items", () => {
   const { item } = normalizeItem({ id: "a", command: "echo hi" }, 0);
   assert.deepEqual(item, {
     id: "a",
     command: "echo hi",
+    watch: false,
     cwd: "${workspaceFolder}",
     intervalSeconds: 300,
     timeoutSeconds: 60,
@@ -62,4 +63,17 @@ test("interpretRun falls back to plain text and errors", () => {
   assert.equal(failed.text, "$(error) c");
   assert.equal(failed.tooltip, "c: boom");
   assert.equal(interpretRun({ id: "c", exitCode: 1, errorMessage: "timed out after 5s" }).tooltip, "c: timed out after 5s");
+});
+
+test("takeLines keeps a partial line for the next chunk", () => {
+  const first = takeLines("", "{\"text\":\"a\"}\n{\"te");
+  assert.deepEqual(first, { lines: ["{\"text\":\"a\"}"], rest: "{\"te" });
+  assert.deepEqual(takeLines(first.rest, "xt\":\"b\"}\r\n"), { lines: ["{\"text\":\"b\"}"], rest: "" });
+});
+
+test("nextRestartDelay backs off and resets after a long run", () => {
+  assert.equal(nextRestartDelay(0, 10), 2000);
+  assert.equal(nextRestartDelay(2000, 10), 4000);
+  assert.equal(nextRestartDelay(40000, 10), 60000);
+  assert.equal(nextRestartDelay(60000, 61000), 2000);
 });
