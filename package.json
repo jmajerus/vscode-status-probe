@@ -2,7 +2,7 @@
   "name": "status-probe",
   "displayName": "Status Probe",
   "description": "Status bar items driven by your own commands: each prints JSON lines (text, tooltip, ok/warn/error, a link), re-run on an interval or run as an event listener.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "jmajerus",
   "license": "MIT",
   "repository": {
@@ -83,6 +83,19 @@
                 "type": "number",
                 "default": 60,
                 "description": "Stop the command and show an error after this many seconds (ignored with watch)."
+              },
+              "refreshOnTasks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "markdownDescription": "VS Code task labels that refresh this item when they end, however they were started (a task button, **Tasks: Run Task**, a keybinding). A trailing `*` matches a prefix: `\"Deploy staging*\"`."
+              },
+              "showTaskProgress": {
+                "type": "boolean",
+                "default": true,
+                "markdownDescription": "Show a spinner on the item while a task from `refreshOnTasks` is running."
               },
               "alignment": {
                 "type": "string",

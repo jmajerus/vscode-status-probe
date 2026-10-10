@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- `refreshOnTasks` links an item to VS Code tasks by label (a trailing `*`
+  matches a prefix). While a linked task runs, the item shows a spinner
+  (`showTaskProgress: false` turns that off); when it ends, the item
+  refreshes.
+
 ## 0.2.0
 
 - `watch: true` runs an item's command as an event listener: started once,

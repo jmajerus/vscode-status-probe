@@ -3,7 +3,14 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-const { normalizeItem, resolveVariables, interpretRun, takeLines, nextRestartDelay } = require("../lib/probe");
+const {
+  normalizeItem,
+  resolveVariables,
+  interpretRun,
+  takeLines,
+  nextRestartDelay,
+  taskMatches
+} = require("../lib/probe");
 
 test("normalizeItem fills defaults and rejects incomplete items", () => {
   const { item } = normalizeItem({ id: "a", command: "echo hi" }, 0);
@@ -15,7 +22,9 @@ test("normalizeItem fills defaults and rejects incomplete items", () => {
     intervalSeconds: 300,
     timeoutSeconds: 60,
     alignment: "left",
-    priority: 0
+    priority: 0,
+    refreshOnTasks: [],
+    showTaskProgress: true
   });
   assert.equal(normalizeItem({ id: "a", command: "x", intervalSeconds: 1 }, 0).item.intervalSeconds, 10);
   assert.match(normalizeItem({ command: "x" }, 2).problem, /items\[2\] needs an id/);
@@ -76,4 +85,16 @@ test("nextRestartDelay backs off and resets after a long run", () => {
   assert.equal(nextRestartDelay(2000, 10), 4000);
   assert.equal(nextRestartDelay(40000, 10), 60000);
   assert.equal(nextRestartDelay(60000, 61000), 2000);
+});
+
+test("taskMatches takes exact labels and trailing-* prefixes", () => {
+  const patterns = ["Build", "Deploy staging*"];
+  assert.equal(taskMatches(patterns, "Build"), true);
+  assert.equal(taskMatches(patterns, "Build all"), false);
+  assert.equal(taskMatches(patterns, "Deploy staging"), true);
+  assert.equal(taskMatches(patterns, "Deploy staging: main"), true);
+  assert.equal(taskMatches(patterns, "Deploy prod"), false);
+  assert.equal(taskMatches(patterns, undefined), false);
+  assert.deepEqual(normalizeItem({ id: "a", command: "x", refreshOnTasks: ["  T  ", "", 3] }, 0).item.refreshOnTasks, ["T"]);
+  assert.equal(normalizeItem({ id: "a", command: "x", showTaskProgress: false }, 0).item.showTaskProgress, false);
 });

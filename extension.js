@@ -9,7 +9,8 @@ const {
   resolveVariables,
   interpretRun,
   takeLines,
-  nextRestartDelay
+  nextRestartDelay,
+  taskMatches
 } = require("./lib/probe");
 
 const BACKGROUND = {
@@ -24,8 +25,9 @@ function commandVariables() {
 
 /**
  * One status bar item driven by one configured command: re-run on an
- * interval, or (`watch: true`) kept running, with each stdout line
- * replacing what the item shows.
+ * interval, or (`watch: true`) run as an event listener, each line it
+ * prints replacing what the item shows. Tasks named in `refreshOnTasks`
+ * show a spinner on the item while they run and refresh it when they end.
  */
 class Probe {
   constructor(item, output) {
@@ -33,6 +35,9 @@ class Probe {
     this.output = output;
     this.running = false;
     this.open = null;
+    this.shownText = null;
+    // Linked task executions still running (see refreshOnTasks).
+    this.tasks = new Set();
     this.bar = vscode.window.createStatusBarItem(
       `statusProbe.${item.id}`,
       item.alignment === "right" ? vscode.StatusBarAlignment.Right : vscode.StatusBarAlignment.Left,
@@ -118,9 +123,14 @@ class Probe {
       this.startWatch();
       return;
     }
-    if (this.running) return;
+    if (this.running) {
+      // The run in flight may predate what triggered this refresh.
+      this.rerun = true;
+      return;
+    }
     const variables = commandVariables();
     this.running = true;
+    this.rerun = false;
     exec(
       resolveVariables(this.item.command, variables),
       {
@@ -141,13 +151,37 @@ class Probe {
           errorMessage: error?.killed ? `timed out after ${this.item.timeoutSeconds}s` : null
         });
         this.render(shown);
+        if (this.rerun) this.refresh();
       }
     );
   }
 
+  links(execution) {
+    return taskMatches(this.item.refreshOnTasks, execution?.task?.name);
+  }
+
+  taskStarted(execution) {
+    if (!this.links(execution)) return;
+    this.tasks.add(execution);
+    this.applyText();
+  }
+
+  taskEnded(execution) {
+    if (!this.tasks.delete(execution)) return;
+    this.applyText();
+    this.refresh();
+  }
+
+  applyText() {
+    if (this.shownText == null) return;
+    const busy = this.tasks.size > 0 && this.item.showTaskProgress;
+    this.bar.text = busy ? `$(sync~spin) ${this.shownText}` : this.shownText;
+  }
+
   render(shown) {
     this.open = shown.open;
-    this.bar.text = shown.text;
+    this.shownText = shown.text;
+    this.applyText();
     if (shown.markdown) {
       const tooltip = new vscode.MarkdownString(shown.tooltip);
       tooltip.supportThemeIcons = true;
@@ -206,7 +240,10 @@ function activate(context) {
         output.appendLine(`statusProbe item "${item.id}" is defined twice; using the first`);
         return;
       }
-      probes.set(item.id, new Probe(item, output));
+      const probe = new Probe(item, output);
+      // A linked task may already be running when settings change.
+      for (const execution of vscode.tasks.taskExecutions || []) probe.taskStarted(execution);
+      probes.set(item.id, probe);
     });
   };
 
@@ -220,7 +257,13 @@ function activate(context) {
     vscode.workspace.onDidChangeConfiguration(event => {
       if (event.affectsConfiguration("statusProbe")) build();
     }),
-    vscode.workspace.onDidChangeWorkspaceFolders(build)
+    vscode.workspace.onDidChangeWorkspaceFolders(build),
+    vscode.tasks.onDidStartTask(event => {
+      for (const probe of probes.values()) probe.taskStarted(event.execution);
+    }),
+    vscode.tasks.onDidEndTask(event => {
+      for (const probe of probes.values()) probe.taskEnded(event.execution);
+    })
   );
   build();
 }

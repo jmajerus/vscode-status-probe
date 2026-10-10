@@ -10,6 +10,7 @@ const os = require("node:os");
 
 const bars = [];
 const commands = new Map();
+const taskListeners = { start: [], end: [] };
 const fakeVscode = {
   StatusBarAlignment: { Left: 1, Right: 2 },
   ThemeColor: class { constructor(id) { this.id = id; } },
@@ -35,6 +36,17 @@ const fakeVscode = {
     getConfiguration() { return { get: () => fakeVscode.workspace.items }; },
     onDidChangeConfiguration() { return { dispose() {} }; },
     onDidChangeWorkspaceFolders() { return { dispose() {} }; }
+  },
+  tasks: {
+    taskExecutions: [],
+    onDidStartTask(listener) {
+      taskListeners.start.push(listener);
+      return { dispose() {} };
+    },
+    onDidEndTask(listener) {
+      taskListeners.end.push(listener);
+      return { dispose() {} };
+    }
   },
   commands: {
     registerCommand(id, handler) {
@@ -78,4 +90,36 @@ test("watch mode renders streamed lines and restarts the command", async () => {
   assert.ok(!bar.texts.some(text => text.startsWith("$(error)")), "a clean exit is not an error");
   for (const subscription of subscriptions) subscription.dispose();
   assert.equal(bar.disposed, true);
+});
+
+test("linked tasks show a spinner while running and refresh the item when they end", async () => {
+  taskListeners.start.length = 0;
+  taskListeners.end.length = 0;
+  fakeVscode.workspace.items = [{
+    id: "t",
+    command: "node -e \"console.log(JSON.stringify({ text: 'run ' + process.hrtime.bigint() }))\"",
+    intervalSeconds: 3600,
+    refreshOnTasks: ["Deploy staging*"]
+  }];
+  const subscriptions = [];
+  require("../extension").activate({ subscriptions });
+  const bar = bars[bars.length - 1];
+  try {
+    await waitFor(() => bar.text?.startsWith("run "), "first run");
+    const first = bar.text;
+
+    const other = { task: { name: "Test" } };
+    for (const listener of taskListeners.start) listener({ execution: other });
+    assert.equal(bar.text, first, "an unlinked task changes nothing");
+
+    const deploy = { task: { name: "Deploy staging: main" } };
+    for (const listener of taskListeners.start) listener({ execution: deploy });
+    assert.equal(bar.text, `$(sync~spin) ${first}`);
+    for (const listener of taskListeners.end) listener({ execution: deploy });
+    assert.equal(bar.text, first, "the spinner goes when the task ends");
+    await waitFor(() => bar.text?.startsWith("run ") && bar.text !== first, "refresh after the task");
+    for (const listener of taskListeners.end) listener({ execution: other });
+  } finally {
+    for (const subscription of subscriptions) subscription.dispose();
+  }
 });

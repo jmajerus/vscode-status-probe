@@ -46,6 +46,31 @@ configuration, such as an edited `.env`.
 }
 ```
 
+## Linking tasks
+
+An item can follow VS Code tasks that change what it reports, such as a
+deploy:
+
+```jsonc
+{
+  "id": "staging",
+  "command": "node tools/staging-status.mjs",
+  "refreshOnTasks": ["Deploy staging", "Migrate staging*"]
+}
+```
+
+While a linked task runs, the item shows a spinner in front of its text.
+When the task ends, whatever its exit code, the item refreshes: an interval
+item re-runs its command right away, and a watch item restarts its listener.
+Status Probe listens for the tasks themselves, so it doesn't matter how they
+start: a task button from another extension, **Tasks: Run Task**, a
+keybinding, or another task's `dependsOn`.
+
+Patterns are exact task labels, or a prefix ending in `*`. A watch item whose
+listener already hears the change gets nothing from the refresh, but the
+spinner still shows that an update is on its way. Set
+`"showTaskProgress": false` to turn the spinner off.
+
 ## The output contract
 
 Each line Status Probe reads is used like this when it's a JSON object with a
@@ -82,6 +107,8 @@ went wrong instead of a generic error.
 | `timeoutSeconds` | `60` | Seconds before the run is stopped and shown as an error. Not used with `watch`. |
 | `alignment` | `left` | `left` or `right`. |
 | `priority` | `0` | Higher sits farther toward the outer edge of its side. |
+| `refreshOnTasks` | `[]` | Task labels (or `prefix*`) that show a spinner while they run and refresh the item when they end. |
+| `showTaskProgress` | `true` | Show that spinner. |
 
 **Status Probe: Refresh All** re-runs every item now, and restarts `watch`
 commands. Clicking an item without an `open` link does the same for that
