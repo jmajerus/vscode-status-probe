@@ -1,10 +1,10 @@
 # Status Probe
 
-Status bar items driven by your own commands. Each item runs a command
-either on an interval or continuously (`watch`), pushing a line whenever
-something changes. Each line is JSON, and Status Probe renders it: text, a
-markdown tooltip, a warning or error background, and a link to open on
-click.
+Status bar items driven by your own commands. An item either re-runs its
+command on an interval, or (`watch`) starts it once and waits for it to
+report changes. The command prints JSON lines, and Status Probe renders each
+one: text, a markdown tooltip, a warning or error background, and a link to
+open on click.
 
 The extension knows nothing about what you're checking. A deploy, a server, a
 queue, a quota: all of that logic lives in your script, in your project.
@@ -27,13 +27,17 @@ queue, a quota: all of that logic lives in your script, in your project.
 By default an item runs its command every `intervalSeconds` and reads the
 **last non-empty line of stdout** when it exits.
 
-With `"watch": true` the command keeps running, and **every line it prints**
-replaces what the item shows. A script can hold a connection open (Server-Sent
-Events, a websocket, `tail -f`, a file watcher) and print only when something
-changes, so nothing polls. If the command exits, the item keeps its last
-status and the command is restarted after 2 s, doubling up to 60 s. The delay
-starts over after a run that lasted a minute. Exiting is also a reasonable way
-to reload configuration, such as an edited `.env`.
+With `"watch": true`, Status Probe starts the command **once** and leaves it
+running. Nothing happens until the command prints a line. Whenever it does,
+seconds or hours later, that line becomes the item's new status. The command
+is meant to sit idle, waiting on something that tells it about changes (a
+Server-Sent Events stream, a websocket, `tail -f`, a file watcher), and print
+only when one arrives. Status Probe never re-runs or polls a watch command.
+
+If the command exits, the item keeps its last status, and the command is
+started again after 2 s, then 4 s, doubling up to 60 s. The delay starts over
+after a run that lasted a minute. Exiting is also a reasonable way to reload
+configuration, such as an edited `.env`.
 
 ```jsonc
 {
@@ -60,9 +64,9 @@ Each line Status Probe reads is used like this when it's a JSON object with a
 ```
 
 Any other line is shown as plain text, with no background. In interval
-mode that's the first stdout line, and only when the command exits 0. A non-zero exit, a timeout or a missing
-command shows `$(error) <id>` on the error background, with stderr in the
-tooltip. stderr also goes to the **Status Probe** output channel.
+mode that's the first stdout line, and only when the command exits 0. A
+non-zero exit, a timeout or a missing command shows `$(error) <id>` on the
+error background, with stderr in the tooltip. stderr also goes to the **Status Probe** output channel.
 
 Exit 0 and report problems through `level`. That way the item shows what
 went wrong instead of a generic error.
@@ -73,7 +77,7 @@ went wrong instead of a generic error.
 |---|---|---|
 | `id` | required | Unique name for the item. |
 | `command` | required | Shell command. `${workspaceFolder}` and `${userHome}` are substituted. |
-| `watch` | `false` | Keep the command running; every line it prints updates the item. |
+| `watch` | `false` | Start the command once and wait; each line it prints, whenever it prints one, becomes the item's status. |
 | `cwd` | `${workspaceFolder}` | Working directory. In a multi-root window, `${workspaceFolder}` is the first folder. |
 | `intervalSeconds` | `300` | Seconds between runs, minimum 10. Not used with `watch`. |
 | `timeoutSeconds` | `60` | Seconds before the run is stopped and shown as an error. Not used with `watch`. |

@@ -2,8 +2,9 @@
 
 ## 0.2.0
 
-- `watch: true` keeps an item's command running; each stdout line updates
-  the item, so a command can push changes instead of being polled. A command
+- `watch: true` starts an item's command once and updates the item whenever
+  the command prints a line, so a command can push changes instead of being
+  re-run. A command
   that exits is restarted with backoff (2 s doubling to 60 s), and the item
   keeps its last status meanwhile.
 
