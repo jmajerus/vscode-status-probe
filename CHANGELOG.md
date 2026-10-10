@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- `intervalSeconds: 0` turns an item's timer off. It runs at startup, when
+  clicked, and when a linked task ends, for statuses only your own tasks
+  change.
+- README: a "Choosing a mode" section on which combinations fit which
+  sources.
+
 ## 0.3.0
 
 - `refreshOnTasks` links an item to VS Code tasks by label (a trailing `*`

@@ -27,6 +27,9 @@ test("normalizeItem fills defaults and rejects incomplete items", () => {
     showTaskProgress: true
   });
   assert.equal(normalizeItem({ id: "a", command: "x", intervalSeconds: 1 }, 0).item.intervalSeconds, 10);
+  assert.equal(normalizeItem({ id: "a", command: "x", intervalSeconds: 0 }, 0).item.intervalSeconds, 0);
+  assert.equal(normalizeItem({ id: "a", command: "x", intervalSeconds: -5 }, 0).item.intervalSeconds, 300);
+  assert.equal(normalizeItem({ id: "a", command: "x", intervalSeconds: "0" }, 0).item.intervalSeconds, 300);
   assert.match(normalizeItem({ command: "x" }, 2).problem, /items\[2\] needs an id/);
   assert.match(normalizeItem({ id: "b" }, 0).problem, /"b" needs a command/);
 });

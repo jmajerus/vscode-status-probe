@@ -71,6 +71,25 @@ listener already hears the change gets nothing from the refresh, but the
 spinner still shows that an update is on its way. Set
 `"showTaskProgress": false` to turn the spinner off.
 
+## Choosing a mode
+
+An item updates for one or more reasons: a timer, events from its own
+source (`watch`), or VS Code tasks ending (`refreshOnTasks`). Pick them by
+asking what can tell you about a change.
+
+| Setup | Updates on | Fits when |
+|---|---|---|
+| Interval | The timer | Nothing reports changes, so you have to ask. A quota or balance API. |
+| Interval + `refreshOnTasks` | The timer, and each linked task ending | Your own tasks cause most changes, but not all. The task updates the item right after your deploy; a long interval catches changes made elsewhere, by a teammate or a CI job. |
+| `watch` | The source's events | Something reports changes: a Server-Sent Events stream, a websocket, a file watcher. The best fit when one is available. |
+| `watch` + `refreshOnTasks` | Events, and a listener restart when a linked task ends | A slow task you'd like to see in progress: the spinner shows an update is coming. The restart is a fallback for a source that can miss a change. |
+| `refreshOnTasks` with `"intervalSeconds": 0` | Linked tasks ending, plus startup and clicks | Only your own tasks change the status. The result of the last local build or migration. |
+
+Rule of thumb: use `watch` when the source can tell you about changes, add
+`refreshOnTasks` when your own tasks cause changes, and keep an interval
+only as a backstop for changes nothing reports. `watch` turns the timer off
+by itself, since a command that never exits has nothing to re-run.
+
 ## The output contract
 
 Each line Status Probe reads is used like this when it's a JSON object with a
@@ -103,7 +122,7 @@ went wrong instead of a generic error.
 | `command` | required | Shell command. `${workspaceFolder}` and `${userHome}` are substituted. |
 | `watch` | `false` | Run the command as an event listener: started once, it prints a line per event, and each line becomes the item's status. |
 | `cwd` | `${workspaceFolder}` | Working directory. In a multi-root window, `${workspaceFolder}` is the first folder. |
-| `intervalSeconds` | `300` | Seconds between runs, minimum 10. Not used with `watch`. |
+| `intervalSeconds` | `300` | Seconds between runs, minimum 10. `0` turns the timer off: the item runs at startup, on click, and after linked tasks. Not used with `watch`. |
 | `timeoutSeconds` | `60` | Seconds before the run is stopped and shown as an error. Not used with `watch`. |
 | `alignment` | `left` | `left` or `right`. |
 | `priority` | `0` | Higher sits farther toward the outer edge of its side. |

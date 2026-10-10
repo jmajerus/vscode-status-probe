@@ -51,7 +51,9 @@ class Probe {
       this.startWatch();
     } else {
       this.refresh();
-      this.timer = setInterval(() => this.refresh(), item.intervalSeconds * 1000);
+      if (item.intervalSeconds > 0) {
+        this.timer = setInterval(() => this.refresh(), item.intervalSeconds * 1000);
+      }
     }
   }
 

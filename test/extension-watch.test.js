@@ -98,7 +98,7 @@ test("linked tasks show a spinner while running and refresh the item when they e
   fakeVscode.workspace.items = [{
     id: "t",
     command: "node -e \"console.log(JSON.stringify({ text: 'run ' + process.hrtime.bigint() }))\"",
-    intervalSeconds: 3600,
+    intervalSeconds: 0,
     refreshOnTasks: ["Deploy staging*"]
   }];
   const subscriptions = [];

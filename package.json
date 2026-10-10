@@ -2,7 +2,7 @@
   "name": "status-probe",
   "displayName": "Status Probe",
   "description": "Status bar items driven by your own commands: each prints JSON lines (text, tooltip, ok/warn/error, a link), re-run on an interval or run as an event listener.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "jmajerus",
   "license": "MIT",
   "repository": {
@@ -76,8 +76,8 @@
               "intervalSeconds": {
                 "type": "number",
                 "default": 300,
-                "minimum": 10,
-                "description": "Seconds between runs (ignored with watch)."
+                "minimum": 0,
+                "markdownDescription": "Seconds between runs, minimum 10. `0` turns the timer off: the item runs at startup, when clicked, and when a task from `refreshOnTasks` ends. Not used with `watch`."
               },
               "timeoutSeconds": {
                 "type": "number",
