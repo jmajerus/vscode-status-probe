@@ -1,0 +1,105 @@
+{
+  "name": "status-probe",
+  "displayName": "Status Probe",
+  "description": "Status bar items driven by your own commands: each prints one line of JSON (text, tooltip, ok/warn/error, a link) on an interval.",
+  "version": "0.1.0",
+  "publisher": "jmajerus",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jmajerus/vscode-status-probe.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "status bar",
+    "statusbar",
+    "monitor",
+    "shell",
+    "command"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Status Probe runs commands from your settings, so it only runs in trusted workspaces."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "statusProbe.refresh",
+        "title": "Refresh All",
+        "category": "Status Probe"
+      }
+    ],
+    "configuration": {
+      "title": "Status Probe",
+      "properties": {
+        "statusProbe.items": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "Status bar items. Each runs `command` every `intervalSeconds` and shows its output. The last stdout line may be JSON `{ \"text\", \"tooltip\", \"level\", \"open\" }`; anything else shows as plain text.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "command"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique name for this item."
+              },
+              "command": {
+                "type": "string",
+                "markdownDescription": "Shell command to run. Supports `${workspaceFolder}` and `${userHome}`."
+              },
+              "cwd": {
+                "type": "string",
+                "default": "${workspaceFolder}",
+                "description": "Working directory for the command."
+              },
+              "intervalSeconds": {
+                "type": "number",
+                "default": 300,
+                "minimum": 10,
+                "description": "Seconds between runs."
+              },
+              "timeoutSeconds": {
+                "type": "number",
+                "default": 60,
+                "description": "Stop the command and show an error after this many seconds."
+              },
+              "alignment": {
+                "type": "string",
+                "enum": [
+                  "left",
+                  "right"
+                ],
+                "default": "left"
+              },
+              "priority": {
+                "type": "number",
+                "default": 0,
+                "description": "Higher sits farther toward the outer edge of its side."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "package": "node -e \"require('fs').mkdirSync('dist',{recursive:true})\" && npx --yes @vscode/vsce package --out dist/"
+  }
+}
