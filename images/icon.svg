@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25344a"/>
+      <stop offset="1" stop-color="#151d2a"/>
+    </linearGradient>
+    <clipPath id="tile"><rect width="256" height="256" rx="44"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="256" height="256" fill="url(#bg)"/>
+    <!-- status bar strip -->
+    <rect y="186" width="256" height="70" fill="#007acc"/>
+  </g>
+  <!-- probe pulse -->
+  <polyline points="28,112 82,112 102,64 128,160 150,92 164,112 228,112"
+            fill="none" stroke="#e8eef6" stroke-width="16"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- one status item: indicator + text -->
+  <circle cx="70" cy="221" r="14" fill="#3fd07f"/>
+  <rect x="98" y="212" width="96" height="18" rx="9" fill="#e8eef6"/>
+</svg>
